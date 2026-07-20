@@ -1,0 +1,53 @@
+---
+import Base from '../../layouts/Base.astro';
+import places from '../../data/places.json';
+export function getStaticPaths() {
+  const m = {};
+  for (const p of places) {
+    const k = p.stateSlug + '/' + p.citySlug;
+    (m[k] ||= { stateSlug: p.stateSlug, citySlug: p.citySlug, city: p.city, stateName: p.stateName, st: p.state, list: [] }).list.push(p);
+  }
+  return Object.values(m).map(ci => ({ params: { state: ci.stateSlug, city: ci.citySlug }, props: { ci } }));
+}
+const { ci } = Astro.props;
+const n = ci.list.length;
+const brands = {};
+for (const p of ci.list) (brands[p.brandSlug] ||= { slug: p.brandSlug, brand: p.brand, bp: p.bp, n: 0 }).n++;
+const topBrands = Object.values(brands).sort((a,b) => b.n - a.n);
+const tLargo = `Restaurants That Accept EBT in ${ci.city}, ${ci.st}: ${n} RMP Location${n===1?'':'s'}`;
+const title = tLargo.length <= 70 ? tLargo : `EBT Restaurants in ${ci.city}, ${ci.st} (${n} Location${n===1?'':'s'})`;
+const desc = `${n} restaurant${n===1?'':'s'} in ${ci.city}, ${ci.stateName} that accept EBT through the SNAP Restaurant Meals Program — with addresses, maps, chains and eligibility rules.`;
+const schemaCol = { "@context":"https://schema.org","@type":"CollectionPage","name":title,
+  "mainEntity":{"@type":"ItemList","numberOfItems":n,"itemListElement":ci.list.slice(0,50).map((p,i)=>({"@type":"ListItem","position":i+1,"name":p.name,"url":`https://ebtplaces.com/restaurant/${p.slug}/`}))}};
+const faq = [
+  { q:`Which restaurants accept EBT in ${ci.city}?`, a:`${ci.city} has ${n} restaurant${n===1?'':'s'} authorized for the SNAP Restaurant Meals Program${topBrands.length?`, including ${topBrands.slice(0,4).map(b=>b.brand).join(', ')}`:''}. Each accepts EBT from eligible recipients for prepared meals.` },
+  { q:`Can anyone use EBT at these ${ci.city} restaurants?`, a:`No — only recipients enrolled in the Restaurant Meals Program: those who are 60 or older, have a disability, or are experiencing homelessness (and their spouses). ${ci.stateName} is a participating state.` },
+  { q:`What can I buy with EBT at a restaurant in ${ci.city}?`, a:`Hot and ready-to-eat meals. Alcohol, tobacco and non-food items aren't covered, and most states don't allow EBT to pay tips. It draws from your regular SNAP balance.` }
+];
+const schemaFaq = { "@context":"https://schema.org","@type":"FAQPage","mainEntity":faq.map(x=>({"@type":"Question","name":x.q,"acceptedAnswer":{"@type":"Answer","text":x.a}}))};
+const crumbs = {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
+  {"@type":"ListItem","position":1,"name":"Home","item":"https://ebtplaces.com/"},
+  {"@type":"ListItem","position":2,"name":ci.stateName,"item":`https://ebtplaces.com/${ci.stateSlug}/`},
+  {"@type":"ListItem","position":3,"name":ci.city}]};
+const cut = (t, x) => t.length > x ? t.slice(0, x-1) + '…' : t;
+---
+<Base title={title} desc={desc} schema={schemaCol}>
+<main class="wrap">
+  <div class="migas"><a href="/">Home</a> › <a href={`/${ci.stateSlug}/`}>{ci.stateName}</a> › {ci.city}</div>
+  <span class="sello">{n} EBT restaurant{n===1?'':'s'} · {ci.city}, {ci.st}</span>
+  <h1 style="font-size:1.6rem">Restaurants that accept EBT in {ci.city}, {ci.stateName}</h1>
+  <p class="lede">{n === 1 ? 'One restaurant in' : `These ${n} restaurants in`} {ci.city} {n===1?'is':'are'} authorized to accept EBT through the SNAP Restaurant Meals Program. Eligible recipients can buy hot, prepared meals with their card.</p>
+  {topBrands.filter(b=>b.bp).length > 0 && <div class="chips">
+    {topBrands.filter(b=>b.bp).slice(0, 10).map(b => <a class="chip" href={`/chain/${b.slug}/`}>{b.brand} ({b.n})</a>)}
+  </div>}
+  <div class="tarjetas">
+    {ci.list.map(p => <a class="tarj" href={`/restaurant/${p.slug}/`}><h3>{cut(p.name, 36)}</h3><p class="sub">{p.street.slice(0, 42)}</p><span class="pil na" style="margin-top:8px">{p.brand}</span></a>)}
+  </div>
+  <div class="nota"><strong>Reminder:</strong> EBT at restaurants is limited to Restaurant Meals Program recipients — generally those 60+, disabled, or experiencing homelessness. <a href="/who-qualifies/">See who qualifies</a>.</div>
+  <h2>Frequently asked questions</h2>
+  {faq.map(x => <details class="faq"><summary>{x.q}</summary><div><p>{x.a}</p></div></details>)}
+  <div class="fuente">Restaurant data from the USDA SNAP Retailer Locator — confirm authorization with the restaurant before visiting.</div>
+</main>
+<script type="application/ld+json" set:html={JSON.stringify(schemaFaq)} />
+<script type="application/ld+json" set:html={JSON.stringify(crumbs)} />
+</Base>

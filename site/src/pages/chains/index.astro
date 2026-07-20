@@ -1,0 +1,21 @@
+---
+import Base from '../../layouts/Base.astro';
+import places from '../../data/places.json';
+const brands = {};
+for (const p of places) (brands[p.brandSlug] ||= { slug: p.brandSlug, brand: p.brand, n: 0 }).n++;
+const big = Object.values(brands).filter(b => b.n >= 5).sort((a,b)=>b.n-a.n);
+const title = `Chains That Accept EBT: Fast Food & Restaurants in the SNAP RMP`;
+const desc = `Full list of restaurant chains that accept EBT through the SNAP Restaurant Meals Program — McDonald's, Subway, Taco Bell and ${big.length - 3}+ more, with locations by state and city.`;
+---
+<Base title={title} desc={desc}>
+<main class="wrap">
+  <div class="migas"><a href="/">Home</a> › Chains</div>
+  <span class="sello">{big.length} chains accept EBT</span>
+  <h1 style="font-size:1.6rem">Restaurant chains that accept EBT</h1>
+  <p class="lede">These chains have locations authorized for the SNAP Restaurant Meals Program. Tap any to see which locations accept EBT by state and city — remember only authorized locations, and only eligible recipients, can use it.</p>
+  <div class="tarjetas">
+    {big.map(b => <a class="tarj" href={`/chain/${b.slug}/`}><h3>Does {b.brand} accept EBT?</h3><p class="sub">{b.n} authorized location{b.n===1?'':'s'}</p></a>)}
+  </div>
+  <div class="fuente">Locations from the USDA SNAP Retailer Locator. See also <a href="/fast-food-that-accepts-ebt/">fast food that accepts EBT</a>.</div>
+</main>
+</Base>

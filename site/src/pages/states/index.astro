@@ -1,0 +1,22 @@
+---
+import Base from '../../layouts/Base.astro';
+import places from '../../data/places.json';
+const states = {};
+for (const p of places) { (states[p.stateSlug] ||= { slug:p.stateSlug, name:p.stateName, cities:new Set(), n:0 }); states[p.stateSlug].n++; states[p.stateSlug].cities.add(p.citySlug); }
+const list = Object.values(states).sort((a,b)=>b.n-a.n);
+const title = `States With the SNAP Restaurant Meals Program (EBT at Restaurants)`;
+const desc = `The ${list.length} states where you can use EBT at restaurants through the SNAP Restaurant Meals Program, with the number of authorized locations in each.`;
+---
+<Base title={title} desc={desc}>
+<main class="wrap">
+  <div class="migas"><a href="/">Home</a> › States</div>
+  <span class="sello">{list.length} states participate</span>
+  <h1 style="font-size:1.6rem">States with the Restaurant Meals Program</h1>
+  <p class="lede">EBT can be used at restaurants only in states that run the SNAP Restaurant Meals Program. These {list.length} states currently have authorized restaurants — if your state isn't here, EBT can't be used at restaurants there yet.</p>
+  <div class="tarjetas">
+    {list.map(s => <a class="tarj" href={`/${s.slug}/`}><h3>{s.name}</h3><p class="sub">{s.n.toLocaleString('en-US')} restaurants · {s.cities.size} cities</p></a>)}
+  </div>
+  <div class="nota">Don't see your state? RMP is a state option and not every state offers it. You can still use EBT for groceries under normal SNAP rules. <a href="/restaurant-meals-program/">Learn more</a>.</div>
+  <div class="fuente">Based on the USDA SNAP Retailer Locator list of authorized restaurants.</div>
+</main>
+</Base>

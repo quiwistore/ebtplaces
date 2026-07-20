@@ -1,0 +1,36 @@
+---
+import Base from '../../layouts/Base.astro';
+import places from '../../data/places.json';
+export function getStaticPaths() {
+  const m = {};
+  for (const p of places) (m[p.stateSlug] ||= { slug: p.stateSlug, name: p.stateName, st: p.state, list: [] }).list.push(p);
+  return Object.values(m).map(s => ({ params: { state: s.slug }, props: { s } }));
+}
+const { s } = Astro.props;
+const cities = {};
+for (const p of s.list) (cities[p.citySlug] ||= { slug: p.citySlug, city: p.city, n: 0 }).n++;
+const brands = {};
+for (const p of s.list) (brands[p.brandSlug] ||= { slug: p.brandSlug, brand: p.brand, bp: p.bp, n: 0 }).n++;
+const topCities = Object.values(cities).sort((a,b) => b.n - a.n || a.city.localeCompare(b.city));
+const topBrands = Object.values(brands).sort((a,b) => b.n - a.n);
+const title = `EBT Restaurants in ${s.name}: ${s.list.length} RMP Locations by City`;
+const desc = `${s.list.length} restaurants in ${s.name} that accept EBT through the SNAP Restaurant Meals Program, organized by city and chain, with eligibility rules and maps.`;
+---
+<Base title={title} desc={desc}>
+<main class="wrap">
+  <div class="migas"><a href="/">Home</a> › <a href="/states/">States</a> › {s.name}</div>
+  <span class="sello">{s.list.length} restaurants · {Object.keys(cities).length} cities</span>
+  <h1 style="font-size:1.6rem">Restaurants that accept EBT in {s.name}</h1>
+  <p class="lede">{s.name} participates in the SNAP Restaurant Meals Program. Below are the {s.list.length} authorized restaurants by city — eligible recipients can pay with EBT for prepared meals.</p>
+  {topBrands.filter(b=>b.bp).length > 0 && <>
+    <h2>Popular chains in {s.name}</h2>
+    <div class="chips">{topBrands.filter(b=>b.bp).slice(0, 14).map(b => <a class="chip" href={`/chain/${b.slug}/`}>{b.brand} ({b.n})</a>)}</div>
+  </>}
+  <h2>Cities in {s.name}</h2>
+  <div class="tarjetas">
+    {topCities.map(c => <a class="tarj" href={`/${s.slug}/${c.slug}/`}><h3>{c.city}</h3><p class="sub">{c.n} restaurant{c.n===1?'':'s'}</p></a>)}
+  </div>
+  <div class="nota">EBT at restaurants in {s.name} is limited to Restaurant Meals Program recipients — <a href="/who-qualifies/">see who qualifies</a>.</div>
+  <div class="fuente">Data from the USDA SNAP Retailer Locator.</div>
+</main>
+</Base>

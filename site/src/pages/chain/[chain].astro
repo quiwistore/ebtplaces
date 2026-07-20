@@ -1,0 +1,51 @@
+---
+import Base from '../../layouts/Base.astro';
+import places from '../../data/places.json';
+export function getStaticPaths() {
+  const m = {};
+  for (const p of places) (m[p.brandSlug] ||= { slug: p.brandSlug, brand: p.brand, list: [] }).list.push(p);
+  return Object.values(m).filter(b => b.list.length >= 5).map(b => ({ params: { chain: b.slug }, props: { b } }));
+}
+const { b } = Astro.props;
+const n = b.list.length;
+const states = {};
+for (const p of b.list) (states[p.stateSlug] ||= { slug: p.stateSlug, name: p.stateName, n: 0 }).n++;
+const cities = {};
+for (const p of b.list) { const k = p.stateSlug+'/'+p.citySlug; (cities[k] ||= { url:`/${p.stateSlug}/${p.citySlug}/`, label:`${p.city}, ${p.state}`, n:0 }).n++; }
+const topStates = Object.values(states).sort((a,b)=>b.n-a.n);
+const topCities = Object.values(cities).sort((a,b)=>b.n-a.n).slice(0, 24);
+const tLargo = `Does ${b.brand} Accept EBT? ${n} SNAP Locations (RMP)`;
+const title = tLargo.length <= 70 ? tLargo : `Does ${b.brand} Accept EBT? (${n} RMP Locations)`;
+const desc = `Yes — ${b.brand} accepts EBT at ${n} locations authorized for the SNAP Restaurant Meals Program. See which ${b.brand} restaurants take EBT by state and city, plus who qualifies.`;
+const schemaFaq = { "@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+  {"@type":"Question","name":`Does ${b.brand} accept EBT?`,"acceptedAnswer":{"@type":"Answer","text":`${b.brand} accepts EBT at ${n} locations authorized for the SNAP Restaurant Meals Program, mainly in ${topStates.slice(0,3).map(s=>s.name).join(', ')}. Only these authorized locations take EBT, and only eligible RMP recipients (60+, disabled, or homeless) can use it.`}},
+  {"@type":"Question","name":`Does every ${b.brand} take EBT?`,"acceptedAnswer":{"@type":"Answer","text":`No. Only ${b.brand} locations authorized for RMP in participating states accept EBT — not every branch. Check the specific location on this page.`}},
+  {"@type":"Question","name":`What can I buy with EBT at ${b.brand}?`,"acceptedAnswer":{"@type":"Answer","text":`Hot and ready-to-eat meals. Alcohol, tobacco and non-food items aren't covered. Purchases come from your regular SNAP balance.`}}]};
+const cut = (t, x) => t.length > x ? t.slice(0, x-1) + '…' : t;
+---
+<Base title={title} desc={desc} schema={schemaFaq}>
+<main class="wrap">
+  <div class="migas"><a href="/">Home</a> › <a href="/chains/">Chains</a> › {b.brand}</div>
+  <span class="sello"><i class="fa-solid fa-store"></i> {n} locations accept EBT</span>
+  <h1 style="font-size:1.6rem">Does {b.brand} accept EBT?</h1>
+  <p class="lede"><strong>Yes — at {n} authorized locations.</strong> {b.brand} takes EBT at restaurants enrolled in the SNAP Restaurant Meals Program, mainly in {topStates.slice(0,3).map(s=>s.name).join(', ')}. Only these locations accept it, and only eligible recipients can use it.</p>
+  <div class="nota v"><i class="fa-solid fa-circle-check" style="color:var(--verde)"></i> <strong>Two conditions:</strong> the location must be RMP-authorized (listed below), and you must be an eligible recipient — 60+, disabled, or experiencing homelessness. <a href="/who-qualifies/">Who qualifies</a>.</div>
+  <h2>{b.brand} EBT locations by state</h2>
+  <div class="tarjetas">
+    {topStates.map(s => <a class="tarj" href={`/${s.slug}/`}><h3>{s.name}</h3><p class="sub">{s.n} {b.brand} location{s.n===1?'':'s'}</p></a>)}
+  </div>
+  {topCities.length > 1 && <>
+    <h2>Top cities for {b.brand} with EBT</h2>
+    <div class="tarjetas">
+      {topCities.map(c => <a class="tarj" href={c.url}><h3>{c.label}</h3><p class="sub">{c.n} location{c.n===1?'':'s'}</p></a>)}
+    </div>
+  </>}
+  <h2>How to use EBT at {b.brand}</h2>
+  <ol>
+    <li><strong>Confirm the location is authorized</strong> — use the state and city lists above, or ask staff for RMP/EBT.</li>
+    <li><strong>Make sure you're eligible</strong> — RMP covers recipients 60+, disabled, or experiencing homelessness. <a href="/who-qualifies/">Details</a>.</li>
+    <li><strong>Order prepared food and swipe your EBT card</strong> like a debit card. Meals only — no alcohol, tobacco, or tips.</li>
+  </ol>
+  <div class="fuente">Locations from the USDA SNAP Retailer Locator. Authorization changes over time — confirm with the restaurant. See <a href="/fast-food-that-accepts-ebt/">all fast food that accepts EBT</a>.</div>
+</main>
+</Base>

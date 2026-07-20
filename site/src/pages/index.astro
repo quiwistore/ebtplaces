@@ -1,0 +1,55 @@
+---
+import Base from '../layouts/Base.astro';
+import places from '../data/places.json';
+const states = {};
+for (const p of places) (states[p.stateSlug] ||= { slug: p.stateSlug, name: p.stateName, n: 0 }).n++;
+const brands = {};
+for (const p of places) (brands[p.brandSlug] ||= { slug: p.brandSlug, brand: p.brand, n: 0 }).n++;
+const topStates = Object.values(states).sort((a,b)=>b.n-a.n);
+const topBrands = Object.values(brands).filter(b=>b.n>=5).sort((a,b)=>b.n-a.n).slice(0, 12);
+const cities = {};
+for (const p of places) { const k=p.stateSlug+'/'+p.citySlug; (cities[k] ||= {url:`/${p.stateSlug}/${p.citySlug}/`,label:`${p.city}, ${p.state}`,n:0}).n++; }
+const topCities = Object.values(cities).sort((a,b)=>b.n-a.n).slice(0, 12);
+const title = `EBT Places: Find Restaurants That Accept EBT Near You`;
+const desc = `Find restaurants that accept EBT through the SNAP Restaurant Meals Program — ${places.length.toLocaleString('en-US')} authorized locations by state, city and chain, with maps and eligibility rules.`;
+---
+<Base title={title} desc={desc}>
+<section class="portada">
+  <div class="wrap" style="padding-top:0;padding-bottom:0">
+    <h1>Find restaurants that accept EBT near you</h1>
+    <p>{places.length.toLocaleString('en-US')} restaurants authorized for the SNAP Restaurant Meals Program — the only way to buy hot, prepared meals with your EBT card. Search by city, state or chain.</p>
+    <form class="buscador" action="/find/" method="get">
+      <input type="search" name="q" placeholder="Your city or a chain (e.g. McDonald's)…" aria-label="Search" />
+      <button class="ir" type="submit"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
+    </form>
+  </div>
+</section>
+<main class="wrap">
+  <div class="nota v" style="margin-top:20px"><i class="fa-solid fa-circle-info" style="color:var(--verde)"></i> <strong>Important:</strong> EBT at restaurants works only through the Restaurant Meals Program, for recipients who are 60+, have a disability, or are experiencing homelessness — in participating states. <a href="/restaurant-meals-program/">How it works</a>.</div>
+
+  <h2>Chains that accept EBT</h2>
+  <div class="tarjetas">
+    {topBrands.map(b => <a class="tarj" href={`/chain/${b.slug}/`}><h3>Does {b.brand} accept EBT?</h3><p class="sub">Yes — {b.n} authorized locations</p></a>)}
+  </div>
+
+  <h2>States with the Restaurant Meals Program</h2>
+  <div class="tarjetas">
+    {topStates.map(s => <a class="tarj" href={`/${s.slug}/`}><h3>{s.name}</h3><p class="sub">{s.n.toLocaleString('en-US')} EBT restaurants</p></a>)}
+  </div>
+
+  <h2>Top cities</h2>
+  <div class="tarjetas">
+    {topCities.map(c => <a class="tarj" href={c.url}><h3>{c.label}</h3><p class="sub">{c.n} restaurants</p></a>)}
+  </div>
+
+  <h2>How restaurant EBT works</h2>
+  <div class="tarjetas">
+    <a class="tarj" href="/restaurant-meals-program/"><h3><i class="fa-solid fa-burger" style="color:var(--naranja)"></i> What is RMP</h3><p class="sub">The program that lets EBT buy restaurant meals — and its 10 states.</p></a>
+    <a class="tarj" href="/who-qualifies/"><h3><i class="fa-solid fa-user-check" style="color:var(--naranja)"></i> Who qualifies</h3><p class="sub">60+, disabled, or experiencing homelessness.</p></a>
+    <a class="tarj" href="/how-to-use-ebt-at-restaurants/"><h3><i class="fa-solid fa-credit-card" style="color:var(--naranja)"></i> How to pay</h3><p class="sub">Using your EBT card at the register, step by step.</p></a>
+    <a class="tarj" href="/fast-food-that-accepts-ebt/"><h3><i class="fa-solid fa-drumstick-bite" style="color:var(--naranja)"></i> Fast food with EBT</h3><p class="sub">Which chains take it and why not every location does.</p></a>
+  </div>
+
+  <p style="max-width:760px;margin-top:20px">EBT Places organizes the USDA's public list of restaurants authorized for the SNAP Restaurant Meals Program so eligible recipients can find a hot meal fast. <strong>We're not the government</strong>, we can't enroll you in SNAP, and we never ask for personal information.</p>
+</main>
+</Base>

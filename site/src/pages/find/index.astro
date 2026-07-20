@@ -1,0 +1,36 @@
+---
+import Base from '../../layouts/Base.astro';
+import places from '../../data/places.json';
+const states = {};
+for (const p of places) (states[p.stateSlug] ||= { slug: p.stateSlug, name: p.stateName, n: 0 }).n++;
+const title = `Find Restaurants That Accept EBT Near You (RMP Locator)`;
+const desc = `Search ${places.length.toLocaleString('en-US')} restaurants that accept EBT through the SNAP Restaurant Meals Program by city, chain or state.`;
+---
+<Base title={title} desc={desc}>
+<main class="wrap">
+  <div class="migas"><a href="/">Home</a> › Find</div>
+  <span class="sello">{places.length.toLocaleString('en-US')} EBT restaurants</span>
+  <h1 style="font-size:1.6rem">Find restaurants that accept EBT</h1>
+  <p class="lede">Type a city, chain or restaurant name. EBT works at these locations only for Restaurant Meals Program recipients.</p>
+  <input class="filtro" id="q" type="search" placeholder="City, chain (McDonald's), or restaurant name…" autocomplete="off" />
+  <div class="tarjetas" id="hits" style="display:none"></div>
+  <div id="states">
+    <h2>Browse by state</h2>
+    <div class="tarjetas">
+      {Object.values(states).sort((a,b)=>a.name.localeCompare(b.name)).map(s => <a class="tarj" href={`/${s.slug}/`}><h3>{s.name}</h3><p class="sub">{s.n.toLocaleString('en-US')} restaurants</p></a>)}
+    </div>
+  </div>
+  <div class="fuente">Data from the USDA SNAP Retailer Locator.</div>
+</main>
+<script define:vars={{ mini: places.map(p => ({ s:p.slug, n:p.name.slice(0,40), c:p.city, st:p.state, b:p.brand })) }}>
+const q=document.getElementById('q'),hits=document.getElementById('hits'),st=document.getElementById('states');
+q.addEventListener('input',()=>{
+  const v=q.value.trim().toLowerCase();
+  if(v.length<2){st.style.display='';hits.style.display='none';return;}
+  const r=mini.filter(p=>p.n.toLowerCase().includes(v)||p.c.toLowerCase().includes(v)||p.b.toLowerCase().includes(v)).slice(0,30);
+  st.style.display='none';hits.style.display='';
+  hits.innerHTML=r.length?r.map(p=>`<a class="tarj" href="/restaurant/${p.s}/"><h3>${p.n}</h3><p class="sub">${p.c}, ${p.st} · ${p.b}</p></a>`).join(''):'<p style="padding:14px">No matches — try a city or chain, or browse by state below.</p>';
+  if(!r.length)st.style.display='';
+});
+</script>
+</Base>

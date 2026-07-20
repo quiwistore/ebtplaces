@@ -1,0 +1,89 @@
+---
+import Base from '../../layouts/Base.astro';
+import places from '../../data/places.json';
+export function getStaticPaths() {
+  return places.map(p => ({ params: { slug: p.slug }, props: { p } }));
+}
+const { p } = Astro.props;
+const hx = [...p.slug].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 997, 7);
+const addr = `${p.street}, ${p.city}, ${p.state} ${p.zip}`;
+const mapQ = encodeURIComponent(`${p.name}, ${addr}`);
+const sameCity = places.filter(x => x.citySlug === p.citySlug && x.stateSlug === p.stateSlug && x.slug !== p.slug);
+const near = sameCity.slice(0, 6);
+const sameBrand = places.filter(x => x.brandSlug === p.brandSlug && x.stateSlug === p.stateSlug && x.slug !== p.slug).slice(0, 4);
+const calle = p.street.replace(/\b(Suite|Ste|Unit|Apt|#).*$/i, '').trim();
+const cut = (t, n) => t.length > n ? t.slice(0, n - 1).replace(/[\s,\-]+$/, '') + '…' : t;
+const cola = ` EBT Restaurant in ${p.city}, ${p.state}`;
+const colaH = ` · EBT in ${p.city}, ${p.state}`;
+const calleCut = cut(calle, 22);
+const homonimo = sameCity.some(x => x.name.toLowerCase() === p.name.toLowerCase());
+const seTrunca = p.name.length > 66 - cola.length;
+const desamb = homonimo || seTrunca;
+const presu = Math.max(12, 66 - (desamb ? colaH.length + calleCut.length + 3 : cola.length));
+const title = desamb
+  ? `${cut(p.name, presu)} (${calleCut})${colaH}`
+  : `${cut(p.name, presu)} —${cola}`;
+const desc = `${p.name} at ${calle}, ${p.city}, ${p.stateName} accepts EBT through the SNAP Restaurant Meals Program. Address, map, who qualifies and how to pay with your EBT card.`;
+const leads = [
+  `${p.name} at ${calle} in ${p.city} is authorized to accept EBT through the SNAP Restaurant Meals Program (RMP). If you're an eligible recipient, you can buy a hot meal here with your EBT card.`,
+  `Looking to use EBT at ${p.name} in ${p.city}? This ${p.brand} location takes EBT under the Restaurant Meals Program for eligible SNAP recipients. Details, map and rules below.`,
+  `This ${p.brand} on ${calle}, ${p.city}, is an RMP-approved restaurant — meaning eligible SNAP recipients can pay with EBT for prepared food. Here's what to know before you go.`,
+  `${p.name} (${p.city}, ${p.stateName}) participates in the SNAP Restaurant Meals Program, so eligible cardholders can buy ready-to-eat meals with EBT. Address, directions and eligibility below.`,
+  `You can use your EBT card at ${p.name} in ${p.city} if you qualify for RMP. This location is on the USDA's list of authorized restaurants. Map and full rules below.`
+];
+const lead = leads[hx % 5];
+const schema = { "@context":"https://schema.org","@type":"Restaurant","name":p.name,
+  "address":{"@type":"PostalAddress","streetAddress":p.street,"addressLocality":p.city,"addressRegion":p.state,"postalCode":p.zip,"addressCountry":"US"},
+  "geo":{"@type":"GeoCoordinates","latitude":p.lat,"longitude":p.lng},
+  "paymentAccepted":"EBT, SNAP Restaurant Meals Program","servesCuisine":p.brand,"url":new URL(Astro.url.pathname, Astro.site).href };
+const faq = [
+  { q:`Can I use EBT at ${p.name} in ${p.city}?`, a:`Yes — this location is authorized for the SNAP Restaurant Meals Program, so eligible recipients (age 60+, disabled, or experiencing homelessness) can pay with their EBT card for prepared meals. Standard SNAP cases that don't qualify for RMP can't buy restaurant food.` },
+  { q:`Who can use EBT here?`, a:`Only recipients enrolled in the Restaurant Meals Program: those who are 60 or older, have a disability, or are experiencing homelessness (and their spouses). Your card is flagged automatically when your case qualifies.` },
+  { q:`What can I buy with EBT at ${p.brand}?`, a:`Hot and ready-to-eat meals are covered. Alcohol, tobacco and non-food items are not, and most states don't let EBT cover tips. Purchases draw from your regular SNAP balance.` },
+  { q:`Does every ${p.brand} accept EBT?`, a:`No. Only locations authorized for RMP in participating states accept EBT.${p.bp ? ` See other ${p.brand} locations on our <a href="/chain/${p.brandSlug}/">${p.brand} page</a>.` : ''}` }
+];
+const schemaFaq = { "@context":"https://schema.org","@type":"FAQPage","mainEntity":faq.map(x=>({"@type":"Question","name":x.q,"acceptedAnswer":{"@type":"Answer","text":x.a.replace(/<[^>]+>/g,'')}}))};
+const crumbs = {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
+  {"@type":"ListItem","position":1,"name":"Home","item":"https://ebtplaces.com/"},
+  {"@type":"ListItem","position":2,"name":p.stateName,"item":`https://ebtplaces.com/${p.stateSlug}/`},
+  {"@type":"ListItem","position":3,"name":p.city,"item":`https://ebtplaces.com/${p.stateSlug}/${p.citySlug}/`},
+  {"@type":"ListItem","position":4,"name":p.name}]};
+---
+<Base title={title} desc={desc} schema={schema}>
+<main class="wrap">
+  <div class="migas"><a href="/">Home</a> › <a href={`/${p.stateSlug}/`}>{p.stateName}</a> › <a href={`/${p.stateSlug}/${p.citySlug}/`}>{p.city}</a> › {cut(p.name, 30)}</div>
+  <span class="sello"><i class="fa-solid fa-utensils"></i> RMP restaurant · {p.city}, {p.state}</span>
+  <h1 style="font-size:1.6rem">{p.name}</h1>
+  <p class="lede">{lead}</p>
+  <div class="botones">
+    <a class="boton na" href={`https://www.google.com/maps/dir/?api=1&destination=${mapQ}`} rel="nofollow noopener" target="_blank"><i class="fa-solid fa-diamond-turn-right"></i> Directions</a>
+    {p.bp
+      ? <a class="boton linea" href={`/chain/${p.brandSlug}/`}><i class="fa-solid fa-store"></i> More {p.brand} with EBT</a>
+      : <a class="boton linea" href="/chains/"><i class="fa-solid fa-store"></i> Chains that accept EBT</a>}
+    <a class="boton linea" href="/who-qualifies/"><i class="fa-solid fa-user-check"></i> Who qualifies</a>
+  </div>
+  <iframe class="mapa" loading="lazy" src={`https://www.google.com/maps?q=${mapQ}&z=15&output=embed`} title={`Map: ${p.name}`}></iframe>
+  <div class="bloque top">
+    <div class="datos">
+      <b>Restaurant</b><span>{p.name}</span>
+      <b>Address</b><span>{addr}</span>
+      <b>Chain</b><span>{p.bp ? <a href={`/chain/${p.brandSlug}/`}>{p.brand}</a> : p.brand}</span>
+      <b>Payment</b><span>EBT accepted via SNAP Restaurant Meals Program (eligible recipients)</span>
+      <b>County</b><span>{p.county || '—'}</span>
+    </div>
+    <p style="margin:10px 0 0;font-size:.83rem;color:var(--mut)">From the USDA SNAP Retailer Locator. Authorization can change — confirm with the restaurant before visiting.</p>
+  </div>
+  <div class="nota"><strong>Before you go:</strong> EBT works here only if you're enrolled in the Restaurant Meals Program — generally recipients who are 60+, have a disability, or are experiencing homelessness. <a href="/who-qualifies/">Check if you qualify</a>.</div>
+  <h2>Frequently asked questions</h2>
+  {faq.map(x => <details class="faq"><summary>{x.q}</summary><div><p set:html={x.a} /></div></details>)}
+  {near.length > 0 && <>
+    <h2>Other EBT restaurants in {p.city}</h2>
+    <div class="tarjetas">
+      {near.map(n => <a class="tarj" href={`/restaurant/${n.slug}/`}><h3>{cut(n.name, 34)}</h3><p class="sub">{n.street.slice(0, 40)}</p></a>)}
+    </div>
+  </>}
+  <div class="fuente">Independent guide — not affiliated with the USDA or any state agency. RMP eligibility and restaurant authorization are set by your state; confirm details before relying on them.</div>
+</main>
+<script type="application/ld+json" set:html={JSON.stringify(schemaFaq)} />
+<script type="application/ld+json" set:html={JSON.stringify(crumbs)} />
+</Base>

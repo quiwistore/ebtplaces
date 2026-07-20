@@ -1,0 +1,39 @@
+---
+import Base from '../layouts/Base.astro';
+import { guides } from '../data/guides.js';
+export function getStaticPaths() {
+  return guides.map(g => ({ params: { guide: g.slug }, props: { g } }));
+}
+const { g } = Astro.props;
+const others = guides.filter(x => x.slug !== g.slug);
+const updated = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+const schemaArt = { "@context":"https://schema.org","@type":"Article","headline":g.title,"inLanguage":"en","author":{"@type":"Organization","name":"EBT Places"} };
+const schemaFaq = { "@context":"https://schema.org","@type":"FAQPage","mainEntity":g.faq.map(f => ({"@type":"Question","name":f[0],"acceptedAnswer":{"@type":"Answer","text":f[1].replace(/<[^>]+>/g,'')}})) };
+---
+<Base title={g.title} desc={g.desc} schema={schemaArt}>
+<main class="wrap">
+  <div class="migas"><a href="/">Home</a> › Guides › {g.short}</div>
+  <span class="sello">EBT & SNAP guide</span>
+  <h1 style="font-size:1.75rem">{g.title}</h1>
+  <div class="linea-meta"><span><i class="fa-regular fa-calendar-check"></i>Updated {updated}</span><span><i class="fa-solid fa-database"></i>Source: USDA SNAP Retailer Locator & FNA</span></div>
+  <div class="nota v"><strong>Short answer:</strong> {g.quick}</div>
+  <article>
+  {g.body.map(([t, c]) => {
+    if (t === 'p') return <p style="margin:12px 0" set:html={c} />;
+    if (t === 'h2') return <h2>{c}</h2>;
+    if (t === 'ul') return <ul>{c.map(i => <li set:html={i} />)}</ul>;
+    if (t === 'ol') return <ol>{c.map(i => <li set:html={i} />)}</ol>;
+    if (t === 'table') return <table class="tabla"><thead><tr>{c[0].map(h => <th>{h}</th>)}</tr></thead><tbody>{c.slice(1).map(r => <tr>{r.map(d => <td set:html={d} />)}</tr>)}</tbody></table>;
+  })}
+  <h2>Frequently asked questions</h2>
+  {g.faq.map(f => <details class="faq"><summary>{f[0]}</summary><div><p set:html={f[1]} /></div></details>)}
+  </article>
+  <h2>Keep reading</h2>
+  <div class="tarjetas">
+    <a class="tarj" href="/find/"><h3><i class="fa-solid fa-magnifying-glass" style="color:var(--naranja)"></i> Find EBT restaurants</h3><p class="sub">Search authorized restaurants near you.</p></a>
+    {others.map(o => <a class="tarj" href={`/${o.slug}/`}><h3><i class={`fa-solid ${o.icon}`} style="color:var(--naranja)"></i> {o.short}</h3><p class="sub">{o.hook}</p></a>)}
+  </div>
+  <div class="fuente">Independent guide. Program rules and participating states change over time — your state SNAP office confirms your eligibility.</div>
+</main>
+<script type="application/ld+json" set:html={JSON.stringify(schemaFaq)} />
+</Base>
