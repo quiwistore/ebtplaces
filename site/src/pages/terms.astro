@@ -1,0 +1,11 @@
+---
+import L from '../data/legal.json';
+import LS from '../data/contacto.json';
+import Base from '../layouts/Base.astro';
+---
+<Base title="Terms of Use | EBT Places" desc="Terms of use of EBT Places, an independent, unofficial site about restaurants that accept EBT.">
+<main class="wrap">
+  <h1 style="font-size:1.6rem">Terms of use</h1>
+<Fragment set:html={L['terms'].html.replaceAll('{{EMAIL}}', LS.email)} />
+</main>
+</Base>

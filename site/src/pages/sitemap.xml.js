@@ -2,7 +2,7 @@ import places from '../data/places.json';
 import { guides } from '../data/guides.js';
 const BASE = 'https://ebtplaces.com';
 export function GET() {
-  const r = ['/', '/find/', '/chains/', '/states/', '/about/', '/contact/', '/privacy/'];
+  const r = ['/', '/find/', '/chains/', '/states/', '/about/', '/contact/', '/privacy/', '/terms/', '/cookies/'];
   for (const g of guides) r.push(`/${g.slug}/`);
   const st = new Set(), ci = new Set(), br = {};
   for (const p of places) {

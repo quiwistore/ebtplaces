@@ -1,0 +1,11 @@
+---
+import L from '../data/legal.json';
+import LS from '../data/contacto.json';
+import Base from '../layouts/Base.astro';
+---
+<Base title="Cookie Policy | EBT Places" desc="Which cookies and browser storage EBT Places uses, by category: none of its own, Google ad cookies when ads are shown, and how to turn them off.">
+<main class="wrap">
+  <h1 style="font-size:1.6rem">Cookie policy</h1>
+<Fragment set:html={L['cookies'].html.replaceAll('{{EMAIL}}', LS.email)} />
+</main>
+</Base>

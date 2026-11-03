@@ -1,19 +1,11 @@
 ---
+import L from '../data/legal.json';
+import LS from '../data/contacto.json';
 import Base from '../layouts/Base.astro';
 ---
 <Base title="Privacy Policy | EBT Places" desc="Privacy policy for ebtplaces.com: we collect no personal, benefit, or eligibility information.">
 <main class="wrap">
   <h1 style="font-size:1.6rem">Privacy policy</h1>
-  <p class="lede">You can use this site without registering or providing any personal information.</p>
-  <h2>What we don't collect</h2>
-  <p>We never ask for your name, EBT number, benefit details, income, disability status, or housing situation. The restaurant search runs entirely in your browser.</p>
-  <h2>Technical data</h2>
-  <p>Our server keeps standard technical logs (IP, page, browser) for security, deleted periodically.</p>
-  <h2>Advertising</h2>
-  <p>We display ads (Google AdSense). Google may use cookies per its policies: <a href="https://policies.google.com/technologies/ads" rel="nofollow noopener">policies.google.com/technologies/ads</a>.</p>
-  <h2>Maps</h2>
-  <p>Restaurant pages embed Google Maps; Google receives your IP when the map loads. Your location is never sent to or stored by us.</p>
-  <h2>Contact</h2>
-  <p>info@ebtplaces.com</p>
+<Fragment set:html={L['privacy'].html.replaceAll('{{EMAIL}}', LS.email)} />
 </main>
 </Base>
